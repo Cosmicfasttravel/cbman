@@ -12,12 +12,9 @@ int main() {
 
     bool running = true;
     while (running) {
-        const int i = mgr->getLatestHotkey();
         std::wstring s;
 
-        if (i > 0) s = mgr->popIndex(i - 1);
-        else if (i == -1) mgr->clear();
-        else if (i == -100) running = false;
+        s = mgr->popNext();
 
         if (!s.empty()) {
             mgr->setClipboardText(s);

@@ -25,16 +25,6 @@ public:
         b_run = false;
     }
 
-    std::wstring popNext() {
-        if (history.empty()) return {}; {
-            std::lock_guard lock(historyMutex);
-
-            std::wstring popped = history.front();
-
-            return popped;
-        }
-    }
-
     std::wstring popIndex(const int i) {
          {
              std::lock_guard lock(historyMutex);
@@ -54,6 +44,15 @@ public:
 
              return popped;
         }
+    }
+
+    std::wstring popNext() {
+        if (dumpText.empty()) return {};
+
+        std::wstring s = dumpText.front();
+        dumpText.pop_front();
+
+        return s;
     }
 
     void setClipboardText(const std::wstring& text) {
@@ -103,56 +102,18 @@ public:
         }
     }
 
-    int getLatestHotkey() {
-        if (clearPressed) {
-            clearPressed = false;
-            return -1;
-        }
-
-        if (exitPressed) {
-            exitPressed = false;
-            return -100;
-        }
-
-        if (hotkey1Pressed) {
-            hotkey1Pressed = false;
-            ++slots;
-            return 1;
-        }
-
-        if (hotkey2Pressed) {
-            hotkey2Pressed = false;
-            ++slots;
-            return 2;
-        }
-
-        if (hotkey3Pressed) {
-            hotkey3Pressed = false;
-            ++slots;
-            return 3;
-        }
-
-        return 0;
-    }
-
 private:
-    int slots = 0;
+    static constexpr int slots = 3;
 
     std::deque<std::wstring> history;
+    std::deque<std::wstring> dumpText;
 
     std::mutex historyMutex;
 
     std::atomic<bool> b_stop{false};
     std::atomic<bool> b_run{false};
 
-    std::atomic<bool> clearPressed = false;
     std::atomic<bool> exitPressed = false;
-
-    std::atomic<bool> hotkey1Pressed = false;
-    std::atomic<bool> hotkey2Pressed = false;
-    std::atomic<bool> hotkey3Pressed = false;
-
-
 
     void poll() {
         HWND hwnd = CreateWindowExW(
@@ -172,43 +133,42 @@ private:
             return;
         }
 
-        RegisterHotKey(hwnd, 100, MOD_CONTROL | MOD_SHIFT | MOD_ALT, 'C');
-        RegisterHotKey(hwnd, 101, MOD_CONTROL | MOD_SHIFT | MOD_ALT, 'X');
-        RegisterHotKey(hwnd, 1, MOD_CONTROL | MOD_SHIFT, '1');
-        RegisterHotKey(hwnd, 2, MOD_CONTROL | MOD_SHIFT, '2');
-        RegisterHotKey(hwnd, 3, MOD_CONTROL | MOD_SHIFT, '3');
+        RegisterHotKey(hwnd, 1, MOD_CONTROL | MOD_SHIFT | MOD_ALT, 'X');
+        RegisterHotKey(hwnd, 2, MOD_CONTROL | MOD_SHIFT, '1');
+        RegisterHotKey(hwnd, 3, MOD_CONTROL | MOD_SHIFT, '2');
+        RegisterHotKey(hwnd, 4, MOD_CONTROL | MOD_SHIFT, '3');
 
         AddClipboardFormatListener(hwnd);
 
         MSG msg = {};
 
         while (!b_stop && GetMessage(&msg, NULL, 0, 0)) {
-            if (msg.message == WM_HOTKEY && msg.wParam == 1) {
-                hotkey1Pressed = true;
+            if (msg.message == WM_HOTKEY && msg.wParam == 2) {
+                if (history.size() >= 1) dumpText.push_back(history.at(0));
                 std::cout << "Hotkey 1 - Pressed" << std::endl;
             }
 
-            if (msg.message == WM_HOTKEY && msg.wParam == 2) {
-                hotkey2Pressed = true;
+            if (msg.message == WM_HOTKEY && msg.wParam == 3) {
+                if (history.size() >= 2) dumpText.push_back(history.at(1));
                 std::cout << "Hotkey 2 - Pressed" << std::endl;
             }
 
-            if (msg.message == WM_HOTKEY && msg.wParam == 3) {
-                hotkey3Pressed = true;
+            if (msg.message == WM_HOTKEY && msg.wParam == 4) {
+                if (history.size() >= 3) dumpText.push_back(history.at(2));
                 std::cout << "Hotkey 3 - Pressed" << std::endl;
             }
 
-            if (msg.message == WM_HOTKEY && msg.wParam == 100) {
-                clearPressed = true;
-                std::cout << "Clear Hotkey - Pressed" << std::endl;
+            if (msg.message == WM_HOTKEY && msg.wParam == 1) {
+                for (const auto& s : dumpText) {
+                    std::wcout << "DumpText = " << s << std::endl;
+                }
+
+                for (const auto& t : history) {
+                    std::wcout << "History = " << t << std::endl;
+                }
             }
 
-            if (msg.message == WM_HOTKEY && msg.wParam == 101) {
-                exitPressed = true;
-                std::cout << "Exit Hotkey - Pressed (Press another hotkey to exit)" << std::endl;
-            }
-
-            if (msg.message == WM_CLIPBOARDUPDATE) {
+            if (msg.message == WM_CLIPBOARDUPDATE) { // triggers message
                 {
                     std::lock_guard lock(historyMutex);
                     std::wstring text = openClipboard();
@@ -224,7 +184,9 @@ private:
 
                     history.push_back(text);
 
-                    while (history.size() >= slots) {
+                    std::cout << "Clipboard Update - Pressed" << std::endl;
+
+                    while (history.size() > slots) {
                         history.pop_front();
                     }
                 }
