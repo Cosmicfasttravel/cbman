@@ -138,9 +138,9 @@ private:
         }
 
         RegisterHotKey(hwnd, 1, MOD_CONTROL | MOD_SHIFT | MOD_ALT, 'X');
-        RegisterHotKey(hwnd, 2, MOD_CONTROL | MOD_SHIFT, '1');
-        RegisterHotKey(hwnd, 3, MOD_CONTROL | MOD_SHIFT, '2');
-        RegisterHotKey(hwnd, 4, MOD_CONTROL | MOD_SHIFT, '3');
+        RegisterHotKey(hwnd, 2, MOD_CONTROL, VK_F1);
+        RegisterHotKey(hwnd, 3, MOD_CONTROL, VK_F2);
+        RegisterHotKey(hwnd, 4, MOD_CONTROL, VK_F3);
 
         AddClipboardFormatListener(hwnd);
 
