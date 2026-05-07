@@ -116,16 +116,19 @@ public:
 
         if (hotkey1Pressed) {
             hotkey1Pressed = false;
+            ++slots;
             return 1;
         }
 
         if (hotkey2Pressed) {
             hotkey2Pressed = false;
+            ++slots;
             return 2;
         }
 
         if (hotkey3Pressed) {
             hotkey3Pressed = false;
+            ++slots;
             return 3;
         }
 
@@ -133,6 +136,8 @@ public:
     }
 
 private:
+    int slots = 0;
+
     std::deque<std::wstring> history;
 
     std::mutex historyMutex;
@@ -219,7 +224,7 @@ private:
 
                     history.push_back(text);
 
-                    while (history.size() >= 10) {
+                    while (history.size() >= slots) {
                         history.pop_front();
                     }
                 }
