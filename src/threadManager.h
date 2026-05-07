@@ -58,6 +58,8 @@ public:
     void setClipboardText(const std::wstring& text) {
         if (!OpenClipboard(NULL)) return;
 
+        ++ignoredClipboardUpdates;
+
         EmptyClipboard();
 
         size_t size = (text.size() + 1) * sizeof(wchar_t);
@@ -113,6 +115,8 @@ private:
     std::atomic<bool> b_stop{false};
     std::atomic<bool> b_run{false};
 
+    std::atomic<int> ignoredClipboardUpdates = 0;
+
     std::atomic<bool> exitPressed = false;
 
     void poll() {
@@ -143,6 +147,7 @@ private:
         MSG msg = {};
 
         while (!b_stop && GetMessage(&msg, NULL, 0, 0)) {
+
             if (msg.message == WM_HOTKEY && msg.wParam == 2) {
                 if (history.size() >= 1) dumpText.push_back(history.at(0));
                 std::cout << "Hotkey 1 - Pressed" << std::endl;
@@ -168,8 +173,15 @@ private:
                 }
             }
 
-            if (msg.message == WM_CLIPBOARDUPDATE) { // triggers message
+            if (msg.message == WM_CLIPBOARDUPDATE) {
                 {
+                    if (ignoredClipboardUpdates > 0) {
+                        --ignoredClipboardUpdates;
+                        continue;
+                    }
+
+                    std::cout << "Clipboard Update - Pressed" << std::endl;
+
                     std::lock_guard lock(historyMutex);
                     std::wstring text = openClipboard();
 
@@ -180,11 +192,9 @@ private:
                         continue;
                     }
 
-                    if (text == history.front()) continue;
+                    if (text == history.back()) continue;
 
                     history.push_back(text);
-
-                    std::cout << "Clipboard Update - Pressed" << std::endl;
 
                     while (history.size() > slots) {
                         history.pop_front();
