@@ -2,7 +2,7 @@
 This hooks into your clipboard and allows you to paste your last 3 clipboard copies in different hotkeys, it runs extremely lightweight with little overhead <2mb ram usage and <0.1% cpu usage
 
 # Hotkeys
-### CTRL + SHIFT + ALT + X = Exit
+### CTRL + SHIFT + ALT + X = Exit (After another hotkey press)
 ### CTRL + F1 = Paste slot 1
 ### CTRL + F2 = Paste slot 2
 ### CTRL + F3 = Paste slot 3
