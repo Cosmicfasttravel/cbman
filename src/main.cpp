@@ -21,7 +21,7 @@ int main() {
             mgr->paste();
         }
 
-        Sleep(10);
+        Sleep(1);
     }
 
     mgr->stop();

@@ -25,28 +25,9 @@ public:
         b_run = false;
     }
 
-    std::wstring popIndex(const int i) {
-         {
-             std::lock_guard lock(historyMutex);
-             if (history.empty()) return {};
-
-             std::wstring popped;
-             try {
-                 if (i < 0 || i >= (int)history.size()) {
-                     std::cout << "Not filled slot" << std::endl;
-                     return {};
-                 }
-                 popped = history.at(i);
-             }
-             catch (std::exception& e) {
-                 std::cout << "Not filled slot: " << e.what() << std::endl;
-             }
-
-             return popped;
-        }
-    }
-
     std::wstring popNext() {
+        std::lock_guard lock(dumpMutex);
+
         if (dumpText.empty()) return {};
 
         std::wstring s = dumpText.front();
@@ -58,7 +39,7 @@ public:
     void setClipboardText(const std::wstring& text) {
         if (!OpenClipboard(NULL)) return;
 
-        ++ignoredClipboardUpdates;
+        if (ignoredClipboardUpdates < 1) ++ignoredClipboardUpdates;
 
         EmptyClipboard();
 
@@ -97,13 +78,6 @@ public:
         SendInput(4, inputs, sizeof(INPUT));
     }
 
-    void clear() {
-        {
-            std::lock_guard lock(historyMutex);
-            history.clear();
-        }
-    }
-
 private:
     static constexpr int slots = 3;
 
@@ -111,6 +85,7 @@ private:
     std::deque<std::wstring> dumpText;
 
     std::mutex historyMutex;
+    std::mutex dumpMutex;
 
     std::atomic<bool> b_stop{false};
     std::atomic<bool> b_run{false};
@@ -164,13 +139,7 @@ private:
             }
 
             if (msg.message == WM_HOTKEY && msg.wParam == 1) {
-                for (const auto& s : dumpText) {
-                    std::wcout << "DumpText = " << s << std::endl;
-                }
-
-                for (const auto& t : history) {
-                    std::wcout << "History = " << t << std::endl;
-                }
+                b_stop = true;
             }
 
             if (msg.message == WM_CLIPBOARDUPDATE) {
@@ -207,7 +176,7 @@ private:
 
             if (b_stop) break;
         }
-        std::cout << "Listener Removed" << std::endl;
+        std::cout << "Listener Removed, Press any key to exit!" << std::endl;
 
         RemoveClipboardFormatListener(hwnd);
     }
