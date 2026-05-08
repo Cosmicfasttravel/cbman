@@ -28,7 +28,7 @@ RegisterHotKey(hwnd, 4, MOD_CONTROL, VK_F3);
 
 <br>
 
-## If this base exe is 0.13mb what does it install
+## If this base exe is 3mb what does it install
 ### Nothing! The exe is the whole manager
 
 <br>
